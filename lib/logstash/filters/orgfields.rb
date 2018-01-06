@@ -13,11 +13,12 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   # configure this filter from your Logstash config.
   #
   # filter {
-  #    {
-  #     merge_bin => {
-  #         "new_field_name1" => ["field1", "field2", ...]
-  #         ...
-  #     to_boolean => ["fname1", "fname2"]
+  #    orgfields {
+  #        merge_bin => {
+  #            "new_field_name1" => ["field1", "field2", ...]
+  #            ...
+  #            }
+  #        to_boolean => ["fname1", "fname2"]
   #   }
   # }
   #
