@@ -24,7 +24,13 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   #           'boolean' => ["f1", "f2", ...]
   #           'integer' => ["f1", "f2", ...]
   #           'float' => ["f1", "f2", ...]
-  #           'datetime' => ["f1", "f2", ...]
+  #           'datetime|date' => {
+  #               'format1' => ["f1", "f2", ...]
+  #               'format2' => ["f3", "f4", ...]
+  #             }
+  #           'array' => {
+  #             'splitor' => ["f1", "f2", ...]
+  #             }
   #           }
   #   }
   # }
@@ -44,7 +50,7 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   public
   def filter(event)
 
-    if !@to_boolean.nil?
+    if @to_boolean.length > 0
 
         @to_boolean.each do |f|
             value = event.get(f)
@@ -61,36 +67,73 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
 
     if @to_type.length > 0
         @to_type.each do |t, fields|
-            fields.each do |f|
-                value = event.get(f)
-                if value.nil?
-                    next
+            if t == 'array'
+
+                fields.each do |sp, flds|
+                    flds.each do |f|
+                        value = event.get(f)
+                        if value.nil?
+                            next
+                        end
+
+                        value = value.strip
+
+                        arr = value.split(sp).map{|x| x.strip}
+                        event.set(f, arr)
+
+                    end # end of flds
+                end  # end of fields
+
+            elsif t == 'datetime' || t == 'date'
+
+                fields.each do |fmt, flds|
+                    flds.each do |f|
+
+                        value = event.get(f)
+                        if value.nil?
+                            next
+                        end
+
+                        value = value.strip
+                        
+                        begin
+                            if fmt == 'default'
+                                fmt = fmt == 'datetime'? '%m/%d/%Y %H:%M:%S' : '%m/%d/%Y'
+                            end
+                            a = DateTime.strptime(value, fmt)
+                            event.set(f, LogStash::Timestamp.new(a.to_time))
+                        rescue Exception => e
+                            event.set(f, nil)
+                        end
+                    end
                 end
-                value = value.strip
-                if t == 'boolean'
-                    if value.downcase.start_with?('t') || value == '1' 
-                       event.set(f, true)
-                    else
-                       event.set(f, false)
+            else
+                fields.each do |f|
+                    value = event.get(f)
+                    if value.nil?
+                        next
                     end
-                elsif t == 'integer'
-                    if /^[\d\.]+$/.match(value)
-                        event.set(f, value.to_i)
+                    value = value.strip
+                    if t == 'boolean'
+                        if value.downcase.start_with?('t') || value == '1' 
+                           event.set(f, true)
+                        else
+                           event.set(f, false)
+                        end
+                    elsif t == 'integer'
+                        if /^[\d\.]+$/.match(value)
+                            event.set(f, value.to_i)
+                        else
+                            event.set(f, nil)
+                        end
+                    elsif t == 'float'
+                        if /^[\d\.]$+/.match(value)
+                            event.set(f, value.to_f)
+                        else
+                            event.set(f, nil)
+                        end
                     else
-                        event.set(f, nil)
-                    end
-                elsif t == 'float'
-                    if /^[\d\.]$+/.match(value)
-                        event.set(f, value.to_f)
-                    else
-                        event.set(f, nil)
-                    end
-                elsif t == 'datetime'
-                    begin
-                        a = DateTime.strptime(value, '%m/%d/%Y %H:%M:%S')
-                        event.set(f, a)
-                    rescue Exception => e
-                        event.set(f, nil)
+                        event.set(f, value)
                     end
                 end
             end # end fields loop
