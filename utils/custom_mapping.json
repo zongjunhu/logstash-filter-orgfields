@@ -1,0 +1,39 @@
+{
+    "template": "adv-*",
+    "order": 0,
+    "mappings" : {
+        "doc" : {
+            "dynamic": "true",
+            "dynamic_templates" : [
+            {
+                "string_with_analysis" : {
+                    "match_mapping_type": "string",
+                    "match" : "*_ana",
+                    "mapping" : {
+                        "type" : "text",
+                        "index" : true,
+                        "analyzed" : true,
+                        "fields" : {
+                            "keyword" : {
+                             "type" : "keyword",
+                             "ignore_above" : 2048
+                            }
+                        }
+                  }
+               }
+            },
+            {
+                "default_string_no_analysis" : {
+                    "match_mapping_type": "string",
+                    "match" : "*",
+                    "mapping" : {
+                        "type" : "keyword",
+                        "index" : true,
+                        "analyzed" : false
+                    }
+               }
+            }
+            ]
+        }
+    }
+}

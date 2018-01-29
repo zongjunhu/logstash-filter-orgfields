@@ -15,11 +15,14 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   #
   # filter {
   #    orgfields {
+  #        null_values => ['null'] 
+  #        true_values => ['1', 'true', 'yes'] 
+  #        ana_fields => [] 
   #        merge_bin => {
   #            "new_field_name1" => ["field1", "field2", ...]
   #            ...
   #            }
-  #        to_boolean => ["fname1", "fname2"]
+  ##       to_boolean => ["fname1", "fname2"]
   #        to_type => {
   #           'boolean' => ["f1", "f2", ...]
   #           'integer' => ["f1", "f2", ...]
@@ -38,8 +41,11 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   config_name "orgfields"
   
   # Replace the message with this value.
+  config :null_values, :validate => :array, :list => false, :default => ['null']
+  config :ana_fields, :validate => :array, :list => false, :default => []
+  config :true_values, :validate => :array, :list => false, :default => ["1", "true", "yes"]
   config :merge_bin, :validate => :hash, :list => false, :default => {}
-  config :to_boolean, :validate => :array, :list => false, :default => {}
+  #config :to_boolean, :validate => :array, :list => false, :default => {}
   config :to_type, :validate => :hash, :list => false, :default => {}
 
   public
@@ -50,20 +56,45 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   public
   def filter(event)
 
-    if @to_boolean.length > 0
+#    if @to_boolean.length > 0
+#
+#        @to_boolean.each do |f|
+#            value = event.get(f)
+#            if value.nil?
+#                next
+#            end
+#            if @true_values.include?(value.strip.downcase)
+#               event.set(f, true)
+#            else
+#                event.set(f, false)
+#            end
+#        end # end to_boolean loop
+#    end # end to_boolean
+#
+    # remove null fields
+    if @null_values.length > 0
+        fields_to_remove = []
+        event.to_hash.each do |k, v|
+            if v.is_a?(String) && @null_values.include?(v.downcase)
+                fields_to_remove << k
+            end
+        end
+        if fields_to_remove.length > 0
+            fields_to_remove.each {|x| event.remove(x)}
+        end
+    end
 
-        @to_boolean.each do |f|
-            value = event.get(f)
-            if value.nil?
-                next
+    # rename fields for analyis.
+    if @ana_fields.length > 0
+        ana_fields.each do |x|
+            value = event.get(x)
+            if !value.nil?
+                event.remove(x)
+                event.set("#{x}_ana", value)
             end
-            if value.strip.downcase.start_with?('t') || value.strip == '1' 
-               event.set(f, true)
-            else
-                event.set(f, false)
-            end
-        end # end to_boolean loop
-    end # end to_boolean
+
+        end
+    end
 
     if @to_type.length > 0
         @to_type.each do |t, fields|
@@ -115,10 +146,12 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
                     end
                     value = value.strip
                     if t == 'boolean'
-                        if value.downcase.start_with?('t') || value == '1' 
+                        if @true_values.include?(value.downcase)
                            event.set(f, true)
-                        else
+                        elsif !value.strip.empty?
                            event.set(f, false)
+                        else
+                            event.remove(f)
                         end
                     elsif t == 'integer'
                         if /^[\d\.]+$/.match(value)
@@ -145,7 +178,7 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
        fields.each do |f|
            value = event.get(f)
            if !value.nil? 
-               if value == "1" || value.strip.downcase.start_with?('t') 
+               if @true_values.include?(value.strip.downcase)
                    if !value_set
                        event.set(fname, f)
                        logger.debug("add #{fname} as: #{f}")
