@@ -17,7 +17,8 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   #    orgfields {
   #        null_values => ['null'] 
   #        true_values => ['1', 'true', 'yes'] 
-  #        ana_fields => [] 
+  #        txt_fields => [] 
+  #        key_fields => [] 
   #        merge_bin => {
   #            "new_field_name1" => ["field1", "field2", ...]
   #            ...
@@ -42,7 +43,8 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
   
   # Replace the message with this value.
   config :null_values, :validate => :array, :list => false, :default => ['null']
-  config :ana_fields, :validate => :array, :list => false, :default => []
+  config :txt_fields, :validate => :array, :list => false, :default => []
+  config :key_fields, :validate => :array, :list => false, :default => []
   config :true_values, :validate => :array, :list => false, :default => ["1", "true", "yes"]
   config :merge_bin, :validate => :hash, :list => false, :default => {}
   #config :to_boolean, :validate => :array, :list => false, :default => {}
@@ -85,12 +87,14 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
     end
 
     # rename fields for analyis.
-    if @ana_fields.length > 0
-        ana_fields.each do |x|
+    if @txt_fields.length > 0
+        @txt_fields.each do |x|
             value = event.get(x)
             if !value.nil?
-                event.remove(x)
-                event.set("#{x}_ana", value)
+                event.set("#{x}_txt", value)
+                if !@key_fields.include?(x)
+                    event.remove(x)
+                end
             end
 
         end
@@ -154,13 +158,13 @@ class LogStash::Filters::Orgfields < LogStash::Filters::Base
                             event.remove(f)
                         end
                     elsif t == 'integer'
-                        if /^[\d\.]+$/.match(value)
+                        if /^-?[\d\.]+$/.match(value)
                             event.set(f, value.to_i)
                         else
                             event.set(f, nil)
                         end
                     elsif t == 'float'
-                        if /^[\d\.]$+/.match(value)
+                        if /^-?[\d\.]+$/.match(value)
                             event.set(f, value.to_f)
                         else
                             event.set(f, nil)

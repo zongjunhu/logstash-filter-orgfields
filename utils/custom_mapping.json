@@ -8,18 +8,12 @@
             {
                 "string_with_analysis" : {
                     "match_mapping_type": "string",
-                    "match" : "*_ana",
+                    "match" : "*_txt",
                     "mapping" : {
                         "type" : "text",
                         "index" : true,
-                        "analyzed" : true,
-                        "fields" : {
-                            "keyword" : {
-                             "type" : "keyword",
-                             "ignore_above" : 2048
-                            }
-                        }
-                  }
+                        "analyzed" : true
+                    }
                }
             },
             {
@@ -29,7 +23,8 @@
                     "mapping" : {
                         "type" : "keyword",
                         "index" : true,
-                        "analyzed" : false
+                        "analyzed" : false,
+                        "ignore_above" : 1024
                     }
                }
             }
