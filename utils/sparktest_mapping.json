@@ -1,0 +1,44 @@
+{
+    "template": "sparktest-*",
+    "order": 0,
+    "mappings" : {
+        "doc" : {
+            "dynamic": "true",
+            "dynamic_templates" : [
+            {
+                "epoch_date" : {
+                    "match_mapping_type": "long",
+                    "match" : "*Date",
+                    "mapping" : {
+                        "type" : "date",
+                        "format": "epoch_millis"
+                    }
+               }
+            },
+            {
+                "string_with_analysis" : {
+                    "match_mapping_type": "string",
+                    "match" : "*_txt",
+                    "mapping" : {
+                        "type" : "text",
+                        "index" : true,
+                        "analyzed" : true
+                    }
+               }
+            },
+            {
+                "default_string_no_analysis" : {
+                    "match_mapping_type": "string",
+                    "match" : "*",
+                    "mapping" : {
+                        "type" : "keyword",
+                        "index" : true,
+                        "analyzed" : false,
+                        "ignore_above" : 1024
+                    }
+               }
+            }
+            ]
+        }
+    }
+}

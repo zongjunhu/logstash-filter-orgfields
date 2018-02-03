@@ -2,6 +2,7 @@ load sample custom template
 
 ```
 curl -H 'Content-Type: application/json' -XPUT http://es-m1:9200/_template/advancement -d @custom_mapping.json
+curl -H 'Content-Type: application/json' -XPUT http://es-m1:9200/_template/sparktest -d @sparktest_mapping.json
 ```
 
 fix csv with new line separated content in cell. original csv file: `test.csv`, new csv file: `test1.csv`
@@ -50,4 +51,10 @@ curl http://es-q1:9200/index_name/_mapping?pretty
 to review overall index list in elasticsearch
 ```
 http://es-q1:9200/_cat/indices?v
+```
+
+watch logstash live log.
+
+```
+tail -f /var/log/logstash/logstash-plain.log
 ```
