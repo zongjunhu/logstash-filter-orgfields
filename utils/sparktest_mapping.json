@@ -11,7 +11,7 @@
                     "match" : "*Date",
                     "mapping" : {
                         "type" : "date",
-                        "format": "epoch_millis"
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
                     }
                }
             },
@@ -38,7 +38,12 @@
                     }
                }
             }
-            ]
+            ],
+            "properties": {
+                "location": {
+                    "type": "geo_point"
+                }
+            }
         }
     }
 }
